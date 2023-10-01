@@ -1,0 +1,538 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+</head>
+<style>
+       
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: black; 
+            color: white; 
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            background-color: #252525; 
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            margin-top: 20px; 
+        }
+
+        h1 {
+            color: #a71111;
+        }
+
+        h2 {
+            color: #a71111;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button[type="button"] {
+            background-color: #330505;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button[type="button"]:hover {
+            background-color: #000000;
+        }
+
+        #contractData p {
+            text-align: center;
+        }
+
+        #transferResult,
+        #ApproveResult {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: rgb(0, 0, 0);
+            color: rgb(255, 254, 254); 
+        }
+    
+</style>
+<body>
+    <div class="container">
+        <h1>Smart Contract Data</h1>
+        <div id="contractData">
+            <p><strong>NAME:PreSale</strong> <span id="name"></span></p>
+            <p><strong>SYMBOL:Sale</strong> <span id="symbol"></span></p>
+            <p><strong>Buy tokens Test with usdt  </strong> <span id="balanceOf"></span></p>
+            <p><strong>Buyer has to first aprove usdt to contract </strong> <span id="balanceOf"></span></p>
+            <p><strong>Token Adress(SALE):0xaE0f7269ccC8dF7Acc418e444f3b8B002926760c</strong> <span id="symbol"></span></p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>Approve Spender</h2>
+        <form id="approveForm">
+            <label for="spender">Spender Address:       </label> <br>
+            <label for="spender">  (Contract : 0x76Fc979D5Fd15d266623F9Ba3ec0cFD95F0383b8)</label>
+            <input type="text" id="spender" required>
+            <br>
+            <label for="Approveamount">Amount:</label>
+            <input type="number" id="Approveamount" required>
+            <br>
+            <button type="button" onclick="Approvetoken()">Approve Tokens</button>
+        </form>
+        <div id="ApproveResult">
+            <!-- Approval  -->
+        </div>
+    </div>
+    <div class="container">
+        <h2>Buy Tokens</h2>
+        <form id="transfer">
+            
+            <label for="transferAmount">Amount(Enter USDT Amount)</label>
+            <input type="number" id="transferAmount" required>
+            <br>
+            <button type="button" onclick="buytoken()">Buy Tokens</button>
+        </form>
+        <div id="transferResult">
+            <!-- Transfer  -->
+        </div>
+    </div>
+    <div class="container">
+        <h2>WithdrawAmount(Onlyowner) </h2>
+        <form id="transfer">
+            
+            <label for="WithdrawAmount">Amount(Enter USDT Amount)</label>
+            <input type="number" id="WithdrawAmount" required>
+            <br>
+            <button type="button" onclick="withdrawUSDT()">Withdraw Amount USDT</button>
+        </form>
+        <div id="WithdrawResult">
+            <!-- Transfer  -->
+        </div>
+    </div>
+
+</body>
+
+<script>
+    let contAddr = "0xE0650733f97FF14D6F54C7F92b0c9dDAde359210";
+    let contAbi =[
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "spender",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
+			}
+		],
+		"name": "Approval",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "spender",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "approve",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "recipient",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "transfer",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
+			}
+		],
+		"name": "Transfer",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "recipient",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "transferFrom",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "spender",
+				"type": "address"
+			}
+		],
+		"name": "allowance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "balanceOf",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalSupply",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
+
+    let cmnd = window.ethereum;
+    if (cmnd) {
+        let provider = new ethers.providers.Web3Provider(cmnd);
+       
+
+
+		Approvetoken=async() => {
+			
+    
+   
+
+    try {
+        const amoun = document.getElementById("Approveamount").value;
+        const spender = document.getElementById("spender").value;
+		let req = await provider.send("eth_requestAccounts", []);
+                let signer = provider.getSigner();
+                const contract = new ethers.Contract(contAddr, contAbi, signer);
+                const amount= ethers.utils.parseUnits(amoun, 18);
+                
+        const tx = await contract.approve(spender , amount);
+        await tx.wait();
+        console.log("Approve successful");
+		document.getElementById("ApproveResult").innerHTML =
+                    "Approve of " + amoun + " usdt to contract  "  + " successful.";
+
+    } catch (error) {
+            console.error(error);
+            if (error.message.includes("User denied transaction signature")) {
+                
+                document.getElementById("ApproveResult").innerHTML =
+                    "Transaction signature denied by user. Please approve the transaction in MetaMask.";
+            } else {
+               
+                document.getElementById("ApproveResult").innerHTML =
+                    "Error: " + error.message; 
+            }
+        }
+        }
+
+    //Presale contract logic
+
+     let ncontAddr = "0x76Fc979D5Fd15d266623F9Ba3ec0cFD95F0383b8";
+    let ncontAbi =[
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_tokenAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_usdtAddress",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
+		"name": "admin",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "usdtAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "buyTokens",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "rate",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "token",
+		"outputs": [
+			{
+				"internalType": "contract IERC20",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "usdt",
+		"outputs": [
+			{
+				"internalType": "contract IERC20",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawUSDT",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+];
+
+
+   
+
+
+		buytoken=async() => {
+			
+    
+   
+
+    try {
+        const amoun = document.getElementById("transferAmount").value;
+		let req = await provider.send("eth_requestAccounts", []);
+                let signer = provider.getSigner();
+                const contract = new ethers.Contract(ncontAddr, ncontAbi, signer);
+                const amount= ethers.utils.parseUnits(amoun, 18);
+        const tx = await contract.buyTokens(amount);
+        await tx.wait();
+        console.log("Transfer successful");
+		document.getElementById("transferResult").innerHTML =
+                    "Transfer of " + amoun + "USDT Tokens  "  + " successful.";
+
+    } catch (error) {
+            console.error(error);
+            if (error.message.includes("User denied transaction signature")) {
+                
+                document.getElementById("transferResult").innerHTML =
+                    "Transaction signature denied by user. Please approve the transaction in MetaMask.";
+            } else {
+               
+                document.getElementById("transferResult").innerHTML =
+                    "Error: " + error.message; 
+            }
+        }
+} 
+
+withdrawUSDT=async() => {
+			
+    
+   
+
+            try {
+                const amoun = document.getElementById("WithdrawAmount").value;
+                let req = await provider.send("eth_requestAccounts", []);
+                        let signer = provider.getSigner();
+                        const contract = new ethers.Contract(ncontAddr, ncontAbi, signer);
+                        const amount= ethers.utils.parseUnits(amoun, 18);
+                const tx = await contract.withdrawUSDT(amount);
+                await tx.wait();
+                console.log("Withdraw successful");
+                document.getElementById("WithdrawResult").innerHTML =
+                            "Withdraw of " + amoun + "USDT  "  + " successful.";
+        
+            } catch (error) {
+                    console.error(error);
+                    if (error.message.includes("User denied transaction signature")) {
+                        
+                        document.getElementById("WithdrawResult").innerHTML =
+                            "Transaction signature denied by user. Please approve the transaction in MetaMask.";
+                    } else {
+                       
+                        document.getElementById("WithdrawResult").innerHTML =
+                            "Error: " + error.message; 
+                    }
+                }
+        }
+
+}else {
+    
+    const installMetaMask = window.confirm("To use this application, please install MetaMask extension for your browser.");
+    if (installMetaMask) {
+       
+        window.location.href = "https://metamask.io/download.html";
+    }}
+</script>
+        
+</html>
